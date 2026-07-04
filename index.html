@@ -1,8 +1,6 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<html lang="fr"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wearcode Pro</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -114,9 +112,13 @@
         .error-message { color: #f87171; font-size: 0.7rem; margin-top: 4px; }
     </style>
 
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="./manifest.json">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#4b6cb7">
-<link rel="apple-touch-icon" href="icon.png"></head>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon.png">
+</head>
 <body>
     <div id="root"></div>
 
@@ -374,9 +376,7 @@
             const updateHtmlContent = (htmlString, cfg) => {
                 if (!htmlString) {
                     // Fallback si le fichier n'existait pas, on en crée un basique
-                    return `<!DOCTYPE html>\n<html lang="${cfg.lang || 'fr'}">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="${cfg.viewport}">\n    <title>${cfg.title}</title>\n    <link rel="manifest" href="manifest.json">\n</head>\n<body>\n    <!-- Votre application ici -->\n
-<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
-</body>\n</html>`;
+                    return `<!DOCTYPE html>\n<html lang="${cfg.lang || 'fr'}">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="${cfg.viewport}">\n    <title>${cfg.title}</title>\n    <link rel="manifest" href="manifest.json">\n</head>\n<body>\n    <!-- Votre application ici -->\n</body>\n</html>`;
                 }
                 
                 const parser = new DOMParser();
@@ -643,5 +643,15 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
-</body>
-</html>
+
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker enregistré !'))
+        .catch(err => console.error('Erreur SW :', err));
+    });
+  }
+</script>
+</body></html>
