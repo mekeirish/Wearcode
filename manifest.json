@@ -4,7 +4,7 @@
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#1a1c20",
-  "theme_color": "#4b6cb7",
+  "theme_color": "#1a1c20",
   "icons": [
     {
       "src": "icon.png",
@@ -12,5 +12,11 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "scope": "/",
+  "orientation": "any",
+  "dir": "auto",
+  "lang": "fr-FR",
+  "categories": [],
+  "screenshots": []
 }
