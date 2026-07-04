@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wearcode Pro</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* === STYLES === */
+        * { box-sizing: border-box; }
+        body {
+            background: #030712;
+            color: #e5e7eb;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .glass-panel {
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(31, 41, 55, 0.6);
+        }
+        .input-dark {
+            background: #0d1117;
+            border: 1.5px solid #1f2937;
+            border-radius: 10px;
+            color: #f3f4f6;
+            padding: 12px 16px;
+            width: 100%;
+            outline: none;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+        .input-dark:focus { border-color: #4b5563; box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.2); }
+        .input-dark::placeholder { color: #6b7280; }
+        .input-color-text {
+            background: #0d1117;
+            border: 1.5px solid #1f2937;
+            border-radius: 10px;
+            color: #f3f4f6;
+            padding: 8px 12px;
+            width: 100px;
+            outline: none;
+            font-family: monospace;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+        .input-color-text:focus { border-color: #4b5563; box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.2); }
+        .btn-ghost {
+            background: #1f2937;
+            border: 1.5px solid #374151;
+            border-radius: 10px;
+            color: #f9fafb;
+            font-weight: 600;
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+        .btn-ghost:hover:not(:disabled) { background: #2d3748; border-color: #4b5563; transform: translateY(-1px); }
+        .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+        .console-log {
+            background: #080c14;
+            border: 1px solid #1a2332;
+            border-radius: 14px;
+            padding: 1.2rem 1.5rem;
+            height: 240px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+            font-size: 0.82rem;
+            line-height: 1.8;
+            color: #cbd5e1;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(56, 189, 248, 0.06);
+        }
+        .console-log::-webkit-scrollbar { width: 6px; }
+        .console-log::-webkit-scrollbar-track { background: #0a0e17; }
+        .console-log::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; border: 1px solid #2d3748; }
+        .console-log .log-line { display: flex; align-items: center; gap: 12px; padding: 3px 0; border-bottom: 1px solid rgba(31, 41, 55, 0.12); }
+        .console-log .log-line:last-child { border-bottom: none; }
+        .console-log .timestamp { color: #4b5563; font-size: 0.75rem; margin-right: 5px; }
+        .console-log .led { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 8px currentColor; }
+        .console-log .led.info { color: #38bdf8; background: #38bdf8; }
+        .console-log .led.success { color: #4ade80; background: #4ade80; }
+        .console-log .led.error { color: #f87171; background: #f87171; }
+        .console-log .msg { flex: 1; word-break: break-word; }
+        .suggestion-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #1f2937; transition: background 0.15s; }
+        .suggestion-item:hover { background: #1f2937; }
+        .color-input-group { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .color-input-group input[type="color"] { width: 44px; height: 44px; border: 1.5px solid #1f2937; border-radius: 8px; background: #0d1117; cursor: pointer; padding: 2px; flex-shrink: 0; }
+        .color-input-group input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        .color-input-group input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+        .json-editor { font-family: 'Courier New', monospace; font-size: 0.75rem; background: #0d1117; min-height: 80px; }
+        .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 14px; border-radius: 30px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border: 1px solid; }
+        .status-badge.changed { background: rgba(251, 191, 36, 0.12); color: #fbbf24; border-color: #fbbf24; }
+        .status-badge.unchanged { background: rgba(107, 114, 128, 0.12); color: #9ca3af; border-color: #374151; }
+        .status-badge.loading { background: rgba(96, 165, 250, 0.12); color: #60a5fa; border-color: #60a5fa; animation: pulse 1.5s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .spinner { border: 2.5px solid #1f2937; border-top-color: #10b981; border-radius: 50%; width: 22px; height: 22px; animation: spin 0.7s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .gradient-text { background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .section-title { border-bottom: 1px solid #1f2937; padding-bottom: 0.7rem; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 10px; }
+        .repo-tag { background: #0f172a; border: 1px solid #1e293b; border-radius: 30px; padding: 2px 16px; font-size: 0.75rem; color: #94a3b8; }
+        .field-group { margin-bottom: 1.2rem; }
+        .field-label { display: block; font-size: 0.75rem; color: #9ca3af; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .input-error { border-color: #f87171 !important; box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.2) !important; }
+        .error-message { color: #f87171; font-size: 0.7rem; margin-top: 4px; }
+    </style>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4b6cb7">
+<link rel="apple-touch-icon" href="icon.png"></head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // === HELPERS UTF-8 BASE64 ===
+        const utf8_to_b64 = (str) => btoa(unescape(encodeURIComponent(str)));
+        const b64_to_utf8 = (str) => decodeURIComponent(escape(atob(str)));
+
+        // === COMPOSANTS RÉUTILISABLES ===
+        const FieldInput = ({ label, value, onChange, type = "text", placeholder = "", textarea = false, error = false, errorMessage = "" }) => (
+            <div className="field-group">
+                <label className="field-label">{label}</label>
+                {textarea ? (
+                    <textarea className={`input-dark resize-y h-16 ${error ? 'input-error' : ''}`} value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+                ) : (
+                    <input className={`input-dark ${error ? 'input-error' : ''}`} type={type} value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+                )}
+                {error && errorMessage && <div className="error-message">{errorMessage}</div>}
+            </div>
+        );
+
+        const ColorInput = ({ label, value, onChange }) => (
+            <div className="field-group">
+                <label className="field-label">{label}</label>
+                <div className="color-input-group">
+                    <input type="color" value={value || '#000000'} onChange={(e) => onChange(e.target.value)} />
+                    <input type="text" className="input-color-text" value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder="#000000" />
+                </div>
+            </div>
+        );
+
+        const Console = ({ logs, endRef }) => (
+            <div className="console-log mt-6">
+                {logs.map((log, idx) => (
+                    <div key={idx} className="log-line">
+                        <span className="timestamp">[{log.time}]</span>
+                        <span className={`led ${log.type}`}></span>
+                        <span className="msg">{log.msg}</span>
+                    </div>
+                ))}
+                <div ref={endRef} />
+            </div>
+        );
+
+        // === CONFIGURATION PAR DÉFAUT ===
+        const DEFAULT_CONFIG = {
+            title: '', metaDescription: '', themeColor: '#030712',
+            viewport: 'width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover',
+            appleCapable: 'yes', appleStatusBarStyle: 'black-translucent',
+            msTileColor: '#030712', msConfig: '/browserconfig.xml',
+            manifestName: '', manifestShortName: '', manifestDescription: '',
+            startUrl: './', scope: '/', display: 'standalone', orientation: 'any',
+            manifestThemeColor: '#030712', manifestBgColor: '#1f2937',
+            dir: 'auto', lang: 'fr-FR', categories: '',
+            iconsJson: '[\n  {\n    "src": "icon.png",\n    "sizes": "192x192",\n    "type": "image/png"\n  },\n  {\n    "src": "icon.png",\n    "sizes": "512x512",\n    "type": "image/png"\n  }\n]',
+            screenshotsJson: '[]'
+        };
+
+        const App = () => {
+            const [token, setToken] = useState(localStorage.getItem('github_token') || '');
+            const [owner, setOwner] = useState(localStorage.getItem('github_owner') || '');
+            const [repos, setRepos] = useState([]);
+            const [loadingRepos, setLoadingRepos] = useState(false);
+            const [repoQuery, setRepoQuery] = useState('');
+            const [selectedRepo, setSelectedRepo] = useState(null);
+            const [logs, setLogs] = useState([{ type: 'info', msg: 'Système prêt.', time: new Date().toLocaleTimeString() }]);
+            const [config, setConfig] = useState({ ...DEFAULT_CONFIG });
+            const [initialConfig, setInitialConfig] = useState({ ...DEFAULT_CONFIG });
+            
+            // États pour conserver le contenu brut original (Anti-cassage)
+            const [rawHtml, setRawHtml] = useState('');
+            const [rawManifest, setRawManifest] = useState('');
+            
+            const [loadingFiles, setLoadingFiles] = useState(false);
+            const [hasChanges, setHasChanges] = useState(false);
+            const [isCommitting, setIsCommitting] = useState(false);
+            const [validationError, setValidationError] = useState({ icons: '', screenshots: '' });
+            
+            const consoleEndRef = useRef(null);
+            const logCountRef = useRef(0);
+
+            useEffect(() => {
+                if (logs.length > logCountRef.current) {
+                    consoleEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                    logCountRef.current = logs.length;
+                }
+            }, [logs]);
+
+            const addLog = (type, msg) => {
+                setLogs(prev => [...prev, { type, msg, time: new Date().toLocaleTimeString() }]);
+            };
+
+            const handleConfigChange = (field, value) => {
+                setConfig(prev => ({ ...prev, [field]: value }));
+                if (field === 'iconsJson') setValidationError(prev => ({...prev, icons: ''}));
+                if (field === 'screenshotsJson') setValidationError(prev => ({...prev, screenshots: ''}));
+            };
+
+            const compareConfigs = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+            useEffect(() => {
+                if (selectedRepo) setHasChanges(!compareConfigs(config, initialConfig));
+                else setHasChanges(false);
+            }, [config, initialConfig, selectedRepo]);
+
+            const validateJson = (str, fieldName) => {
+                try { JSON.parse(str); return true; } 
+                catch (e) { setValidationError(prev => ({ ...prev, [fieldName]: `JSON Invalide: ${e.message}` })); return false; }
+            };
+
+            const fetchOwner = async (githubToken) => {
+                try {
+                    const res = await fetch('https://api.github.com/user', { headers: { Authorization: `token ${githubToken}`, Accept: 'application/vnd.github.v3+json' } });
+                    if (!res.ok) throw new Error('Token invalide');
+                    const data = await res.json();
+                    localStorage.setItem('github_owner', data.login);
+                    setOwner(data.login);
+                    addLog('success', `Owner détecté : ${data.login}`);
+                    return data.login;
+                } catch (err) { addLog('error', `Erreur owner : ${err.message}`); return null; }
+            };
+
+            const loadRepoFiles = async (repoName, repoBranch, githubToken, ownerName) => {
+                setLoadingFiles(true);
+                addLog('info', `Chargement de ${repoName} (branche: ${repoBranch})...`);
+
+                const filesToTry = ['manifest.json', 'index.html', 'index.htm', 'default.html'];
+                const loaded = { manifest: null, html: null };
+
+                for (const file of filesToTry) {
+                    try {
+                        const url = `https://api.github.com/repos/${ownerName}/${repoName}/contents/${file}?ref=${repoBranch}`;
+                        const res = await fetch(url, { headers: { Authorization: `token ${githubToken}`, Accept: 'application/vnd.github.v3+json' } });
+                        if (res.ok) {
+                            const data = await res.json();
+                            const content = b64_to_utf8(data.content);
+                            if (file === 'manifest.json') { loaded.manifest = content; addLog('success', `manifest.json trouvé.`); } 
+                            else { loaded.html = content; addLog('success', `${file} trouvé.`); }
+                        }
+                    } catch (e) {}
+                }
+
+                // On stocke les contenus bruts pour la modification non-destructive
+                setRawHtml(loaded.html || '');
+                setRawManifest(loaded.manifest || '');
+
+                let newConfig = { ...DEFAULT_CONFIG };
+                
+                if (loaded.manifest) {
+                    try {
+                        const manifest = JSON.parse(loaded.manifest);
+                        newConfig.manifestName = manifest.name || '';
+                        newConfig.manifestShortName = manifest.short_name || '';
+                        newConfig.manifestDescription = manifest.description || '';
+                        newConfig.startUrl = manifest.start_url || './';
+                        newConfig.scope = manifest.scope || '/';
+                        newConfig.display = manifest.display || 'standalone';
+                        newConfig.orientation = manifest.orientation || 'any';
+                        newConfig.manifestThemeColor = manifest.theme_color || '#030712';
+                        newConfig.manifestBgColor = manifest.background_color || '#1f2937';
+                        newConfig.dir = manifest.dir || 'auto';
+                        newConfig.lang = manifest.lang || 'fr-FR';
+                        newConfig.categories = (manifest.categories || []).join(', ');
+                        newConfig.iconsJson = JSON.stringify(manifest.icons || JSON.parse(DEFAULT_CONFIG.iconsJson), null, 2);
+                        newConfig.screenshotsJson = JSON.stringify(manifest.screenshots || [], null, 2);
+                    } catch (e) { addLog('error', `Erreur parsing manifest.json`); }
+                }
+
+                if (loaded.html) {
+                    try {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(loaded.html, 'text/html');
+                        const get = (sel, attr = 'content') => { const el = doc.querySelector(sel); return el ? (attr === 'text' ? el.textContent : el.getAttribute(attr)) : null; };
+                        newConfig.title = get('title', 'text') || '';
+                        newConfig.metaDescription = get('meta[name="description"]') || '';
+                        newConfig.themeColor = get('meta[name="theme-color"]') || '#030712';
+                        newConfig.viewport = get('meta[name="viewport"]') || DEFAULT_CONFIG.viewport;
+                        newConfig.appleCapable = get('meta[name="apple-mobile-web-app-capable"]') || 'yes';
+                        newConfig.appleStatusBarStyle = get('meta[name="apple-mobile-web-app-status-bar-style"]') || 'black-translucent';
+                        newConfig.msTileColor = get('meta[name="msapplication-TileColor"]') || '#030712';
+                        newConfig.msConfig = get('meta[name="msapplication-config"]') || '/browserconfig.xml';
+                    } catch (e) { addLog('error', `Erreur parsing HTML`); }
+                }
+
+                setConfig(newConfig);
+                setInitialConfig(newConfig);
+                setLoadingFiles(false);
+                addLog('success', 'Configuration chargée.');
+            };
+
+            const fetchRepos = async (githubToken) => {
+                setLoadingRepos(true);
+                addLog('info', 'Récupération des repos...');
+                const ownerLogin = await fetchOwner(githubToken);
+                if (!ownerLogin) { setLoadingRepos(false); return; }
+                try {
+                    const res = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated', { headers: { Authorization: `token ${githubToken}`, Accept: 'application/vnd.github.v3+json' } });
+                    if (!res.ok) throw new Error(`Erreur HTTP ${res.status}`);
+                    const data = await res.json();
+                    const repoData = data.map(repo => ({ name: repo.name, branch: repo.default_branch }));
+                    setRepos(repoData);
+                    addLog('success', `${repoData.length} repos chargés.`);
+                } catch (err) { addLog('error', `Erreur : ${err.message}`); } 
+                finally { setLoadingRepos(false); }
+            };
+
+            const handleSaveToken = () => {
+                if (!token.trim()) { addLog('error', 'Token vide.'); return; }
+                localStorage.setItem('github_token', token);
+                addLog('success', 'Token sauvegardé.');
+                fetchRepos(token);
+            };
+
+            const filteredRepos = repoQuery.trim() === '' ? [] : repos.filter(r => r.name.toLowerCase().includes(repoQuery.toLowerCase()));
+
+            const selectRepo = async (repoObj) => {
+                setSelectedRepo(repoObj);
+                setRepoQuery('');
+                addLog('success', `Repo "${repoObj.name}" sélectionné.`);
+                if (token && owner) await loadRepoFiles(repoObj.name, repoObj.branch, token, owner);
+                else addLog('error', `Token ou owner manquant.`);
+            };
+
+            // === MODIFICATION NON-DESTRUCTIVE POUR LE MANIFEST ===
+            const updateManifestContent = (manifestString, cfg) => {
+                let manifest = {};
+                try { manifest = JSON.parse(manifestString); } catch (e) {}
+                
+                manifest.name = cfg.manifestName || undefined;
+                manifest.short_name = cfg.manifestShortName || undefined;
+                manifest.description = cfg.manifestDescription || undefined;
+                manifest.start_url = cfg.startUrl;
+                manifest.scope = cfg.scope;
+                manifest.display = cfg.display;
+                manifest.orientation = cfg.orientation;
+                manifest.theme_color = cfg.manifestThemeColor;
+                manifest.background_color = cfg.manifestBgColor;
+                manifest.dir = cfg.dir;
+                manifest.lang = cfg.lang;
+                manifest.categories = cfg.categories ? cfg.categories.split(',').map(c => c.trim()).filter(Boolean) : [];
+                
+                try { manifest.icons = JSON.parse(cfg.iconsJson || '[]'); } catch (e) { manifest.icons = []; }
+                try { manifest.screenshots = JSON.parse(cfg.screenshotsJson || '[]'); } catch (e) { manifest.screenshots = []; }
+
+                Object.keys(manifest).forEach(key => {
+                    if (manifest[key] === undefined || manifest[key] === null || manifest[key] === '') delete manifest[key];
+                });
+
+                return JSON.stringify(manifest, null, 2);
+            };
+
+            // === MODIFICATION NON-DESTRUCTIVE POUR L'HTML ===
+            const updateHtmlContent = (htmlString, cfg) => {
+                if (!htmlString) {
+                    // Fallback si le fichier n'existait pas, on en crée un basique
+                    return `<!DOCTYPE html>\n<html lang="${cfg.lang || 'fr'}">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="${cfg.viewport}">\n    <title>${cfg.title}</title>\n    <link rel="manifest" href="manifest.json">\n</head>\n<body>\n    <!-- Votre application ici -->\n
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
+</body>\n</html>`;
+                }
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlString, 'text/html');
+                
+                // Helper pour mettre à jour ou créer une balise meta
+                const upsertMeta = (selector, attr, value, nameAttr) => {
+                    let el = doc.querySelector(selector);
+                    if (!el) {
+                        el = doc.createElement('meta');
+                        if (nameAttr) el.setAttribute('name', nameAttr);
+                        doc.head.appendChild(el);
+                    }
+                    el.setAttribute(attr, value);
+                };
+
+                // Title
+                let titleEl = doc.querySelector('title');
+                if (!titleEl) { titleEl = doc.createElement('title'); doc.head.appendChild(titleEl); }
+                titleEl.textContent = cfg.title || '';
+
+                // Metas
+                upsertMeta('meta[name="description"]', 'content', cfg.metaDescription || '', 'description');
+                upsertMeta('meta[name="theme-color"]', 'content', cfg.themeColor, 'theme-color');
+                upsertMeta('meta[name="viewport"]', 'content', cfg.viewport, 'viewport');
+                upsertMeta('meta[name="apple-mobile-web-app-capable"]', 'content', cfg.appleCapable, 'apple-mobile-web-app-capable');
+                upsertMeta('meta[name="apple-mobile-web-app-status-bar-style"]', 'content', cfg.appleStatusBarStyle, 'apple-mobile-web-app-status-bar-style');
+                upsertMeta('meta[name="msapplication-TileColor"]', 'content', cfg.msTileColor, 'msapplication-TileColor');
+                upsertMeta('meta[name="msapplication-config"]', 'content', cfg.msConfig, 'msapplication-config');
+
+                // Link Manifest
+                let manifestLink = doc.querySelector('link[rel="manifest"]');
+                if (!manifestLink) {
+                    manifestLink = doc.createElement('link');
+                    manifestLink.setAttribute('rel', 'manifest');
+                    manifestLink.setAttribute('href', 'manifest.json');
+                    doc.head.appendChild(manifestLink);
+                }
+                
+                // HTML lang attribute
+                doc.documentElement.setAttribute('lang', cfg.lang || 'fr');
+
+                // Sérialisation propre (garde le body et les scripts intacts !)
+                return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+            };
+
+            const handleCommit = async () => {
+                if (!selectedRepo) { addLog('error', 'Aucun repo sélectionné.'); return; }
+                if (!hasChanges) { addLog('info', 'Aucune modification détectée.'); return; }
+                
+                if (!validateJson(config.iconsJson, 'icons')) return;
+                if (!validateJson(config.screenshotsJson, 'screenshots')) return;
+
+                setIsCommitting(true);
+                addLog('info', `🔨 Début du commit sur "${selectedRepo.name}"...`);
+
+                try {
+                    // ON UTILISE LES FONCTIONS NON-DESTRUCTIVES
+                    const manifestContent = updateManifestContent(rawManifest, config);
+                    const htmlContent = updateHtmlContent(rawHtml, config);
+
+                    const pushFile = async (path, content, message) => {
+                        let sha = null;
+                        try {
+                            const res = await fetch(`https://api.github.com/repos/${owner}/${selectedRepo.name}/contents/${path}?ref=${selectedRepo.branch}`, {
+                                headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+                            });
+                            if (res.ok) { const data = await res.json(); sha = data.sha; }
+                        } catch (e) {}
+
+                        const payload = {
+                            message: message || `Update ${path}`,
+                            content: utf8_to_b64(content),
+                            branch: selectedRepo.branch
+                        };
+                        if (sha) payload.sha = sha;
+
+                        const response = await fetch(`https://api.github.com/repos/${owner}/${selectedRepo.name}/contents/${path}`, {
+                            method: 'PUT',
+                            headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(`Erreur ${response.status}: ${errorData.message || 'Inconnue'}`);
+                        }
+                        return await response.json();
+                    };
+
+                    addLog('info', '📦 Push manifest.json...');
+                    await pushFile('manifest.json', manifestContent, 'chore: update manifest via Wearcode');
+                    addLog('success', 'manifest.json mis à jour.');
+
+                    addLog('info', '📦 Push index.html...');
+                    await pushFile('index.html', htmlContent, 'chore: update html head via Wearcode');
+                    addLog('success', 'index.html mis à jour.');
+
+                    setInitialConfig({ ...config });
+                    addLog('success', `✅ Commit réussi sur la branche ${selectedRepo.branch} !`);
+
+                } catch (err) { addLog('error', `❌ Erreur commit : ${err.message}`); } 
+                finally { setIsCommitting(false); }
+            };
+
+            return (
+                <div className="glass-panel rounded-2xl p-6 md:p-8 shadow-2xl w-full max-w-6xl mx-auto">
+                    <h1 className="text-3xl md:text-4xl font-extrabold text-center mb-8 gradient-text tracking-tight">Wearcode Pro</h1>
+
+                    <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                        <input className="input-dark flex-1" placeholder="GitHub Token (avec droits repo)" type="password" value={token} onChange={(e) => setToken(e.target.value)} />
+                        <button className="btn-ghost px-8 py-2 whitespace-nowrap" onClick={handleSaveToken}>Charger</button>
+                    </div>
+
+                    {owner && (
+                        <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
+                            <span>👤 Owner :</span>
+                            <span className="font-mono text-cyan-300 bg-gray-800/40 px-3 py-0.5 rounded">{owner}</span>
+                        </div>
+                    )}
+
+                    <div className="relative mb-6">
+                        <input className="input-dark" placeholder="🔍 Rechercher un repo..." value={repoQuery} onChange={(e) => setRepoQuery(e.target.value)} disabled={!!selectedRepo || loadingRepos} />
+                        {loadingRepos && <div className="absolute right-4 top-3"><span className="spinner"></span></div>}
+                        {repoQuery && filteredRepos.length > 0 && !selectedRepo && (
+                            <div className="absolute w-full mt-2 glass-panel rounded-xl p-1 z-10 max-h-52 overflow-y-auto border border-gray-700/50">
+                                {filteredRepos.map((r) => (
+                                    <div key={r.name} className="suggestion-item rounded-lg flex justify-between items-center" onClick={() => selectRepo(r)}>
+                                        <span className="font-medium">{r.name}</span>
+                                        <span className="repo-tag">{r.branch}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {repoQuery && filteredRepos.length === 0 && !selectedRepo && !loadingRepos && (
+                            <div className="absolute w-full mt-2 glass-panel rounded-xl p-3 text-gray-400 text-sm border border-gray-700/50">Aucun repo trouvé.</div>
+                        )}
+                    </div>
+
+                    {selectedRepo && (
+                        <div className="flex flex-wrap items-center gap-3 mb-6 bg-gray-800/20 rounded-xl px-5 py-3 border border-gray-700">
+                            <span className="text-sm text-gray-400">📂 Repo :</span>
+                            <span className="font-bold text-cyan-300">{selectedRepo.name}</span>
+                            <span className="text-xs text-gray-500">(Branche: {selectedRepo.branch})</span>
+                            {loadingFiles ? <span className="status-badge loading">⏳ Chargement</span> : hasChanges ? <span className="status-badge changed">● Modifié</span> : <span className="status-badge unchanged">● Inchangé</span>}
+                            <button className="ml-auto text-xs text-gray-400 hover:text-red-400 transition" onClick={() => { setSelectedRepo(null); setConfig({ ...DEFAULT_CONFIG }); setInitialConfig({ ...DEFAULT_CONFIG }); setHasChanges(false); setRawHtml(''); setRawManifest(''); addLog('info', 'Repo fermé.'); }}>✕ Fermer</button>
+                        </div>
+                    )}
+
+                    {selectedRepo && !loadingFiles && (
+                        <>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                <div className="glass-panel rounded-xl p-5 border border-gray-700/40">
+                                    <div className="section-title"><span className="text-lg font-bold text-gray-200">⚙️ HTML Head</span></div>
+                                    <FieldInput label="Title" value={config.title} onChange={(v) => handleConfigChange('title', v)} />
+                                    <FieldInput label="Meta Description" value={config.metaDescription} onChange={(v) => handleConfigChange('metaDescription', v)} textarea={true} />
+                                    <ColorInput label="Theme Color" value={config.themeColor} onChange={(v) => handleConfigChange('themeColor', v)} />
+                                    <FieldInput label="Viewport Content" value={config.viewport} onChange={(v) => handleConfigChange('viewport', v)} placeholder="width=device-width, initial-scale=1.0" />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="field-group">
+                                            <label className="field-label">Apple Capable</label>
+                                            <select className="input-dark" value={config.appleCapable} onChange={(e) => handleConfigChange('appleCapable', e.target.value)}>
+                                                <option value="yes">yes</option><option value="no">no</option>
+                                            </select>
+                                        </div>
+                                        <div className="field-group">
+                                            <label className="field-label">Status Bar</label>
+                                            <select className="input-dark" value={config.appleStatusBarStyle} onChange={(e) => handleConfigChange('appleStatusBarStyle', e.target.value)}>
+                                                <option value="default">default</option><option value="black-translucent">black-translucent</option><option value="black">black</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <ColorInput label="MS Tile Color" value={config.msTileColor} onChange={(v) => handleConfigChange('msTileColor', v)} />
+                                        <FieldInput label="MS Config" value={config.msConfig} onChange={(v) => handleConfigChange('msConfig', v)} />
+                                    </div>
+                                </div>
+
+                                <div className="glass-panel rounded-xl p-5 border border-gray-700/40">
+                                    <div className="section-title"><span className="text-lg font-bold text-gray-200">📄 Manifest JSON</span></div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <FieldInput label="Name" value={config.manifestName} onChange={(v) => handleConfigChange('manifestName', v)} />
+                                        <FieldInput label="Short Name" value={config.manifestShortName} onChange={(v) => handleConfigChange('manifestShortName', v)} />
+                                    </div>
+                                    <FieldInput label="Description" value={config.manifestDescription} onChange={(v) => handleConfigChange('manifestDescription', v)} textarea={true} />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <FieldInput label="Start URL" value={config.startUrl} onChange={(v) => handleConfigChange('startUrl', v)} />
+                                        <FieldInput label="Scope" value={config.scope} onChange={(v) => handleConfigChange('scope', v)} />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="field-group">
+                                            <label className="field-label">Display</label>
+                                            <select className="input-dark" value={config.display} onChange={(e) => handleConfigChange('display', e.target.value)}>
+                                                <option value="standalone">Standalone</option><option value="fullscreen">Fullscreen</option><option value="minimal-ui">Minimal UI</option><option value="browser">Browser</option>
+                                            </select>
+                                        </div>
+                                        <div className="field-group">
+                                            <label className="field-label">Orientation</label>
+                                            <select className="input-dark" value={config.orientation} onChange={(e) => handleConfigChange('orientation', e.target.value)}>
+                                                <option value="any">Any</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <ColorInput label="Theme Color" value={config.manifestThemeColor} onChange={(v) => handleConfigChange('manifestThemeColor', v)} />
+                                        <ColorInput label="Background" value={config.manifestBgColor} onChange={(v) => handleConfigChange('manifestBgColor', v)} />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="field-group">
+                                            <label className="field-label">Dir</label>
+                                            <select className="input-dark" value={config.dir} onChange={(e) => handleConfigChange('dir', e.target.value)}>
+                                                <option value="auto">Auto</option><option value="ltr">LTR</option><option value="rtl">RTL</option>
+                                            </select>
+                                        </div>
+                                        <FieldInput label="Lang" value={config.lang} onChange={(v) => handleConfigChange('lang', v)} />
+                                    </div>
+                                    <FieldInput label="Categories (séparées par des virgules)" value={config.categories} onChange={(v) => handleConfigChange('categories', v)} placeholder="logistics, food" />
+                                    <div className="field-group">
+                                        <label className="field-label">Icons (JSON)</label>
+                                        <textarea className={`input-dark json-editor resize-y ${validationError.icons ? 'input-error' : ''}`} value={config.iconsJson} onChange={(e) => handleConfigChange('iconsJson', e.target.value)} />
+                                        {validationError.icons && <div className="error-message">{validationError.icons}</div>}
+                                    </div>
+                                    <div className="field-group">
+                                        <label className="field-label">Screenshots (JSON)</label>
+                                        <textarea className={`input-dark json-editor resize-y ${validationError.screenshots ? 'input-error' : ''}`} value={config.screenshotsJson} onChange={(e) => handleConfigChange('screenshotsJson', e.target.value)} />
+                                        {validationError.screenshots && <div className="error-message">{validationError.screenshots}</div>}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button className={`w-full btn-ghost py-4 rounded-xl text-lg font-bold transition ${!hasChanges || isCommitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-700'}`} onClick={handleCommit} disabled={!hasChanges || isCommitting}>
+                                {isCommitting ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <span className="spinner" style={{ width: '20px', height: '20px' }}></span>
+                                        Commit en cours sur {selectedRepo.branch}...
+                                    </span>
+                                ) : (
+                                    <>
+                                        🚀 Commit sur la branche "{selectedRepo.branch}"
+                                        {hasChanges && <span className="ml-2 text-sm font-normal bg-gray-700/50 px-3 py-0.5 rounded-full">{Object.keys(config).filter(k => config[k] !== initialConfig[k]).length} changement(s)</span>}
+                                    </>
+                                )}
+                            </button>
+                        </>
+                    )}
+
+                    {selectedRepo && loadingFiles && (
+                        <div className="text-center py-8">
+                            <span className="spinner mr-2"></span>
+                            <span className="text-gray-400">Chargement des fichiers...</span>
+                        </div>
+                    )}
+
+                    <Console logs={logs} endRef={consoleEndRef} />
+
+                    <div className="text-center text-xs text-gray-600 mt-4 border-t border-gray-700/50 pt-4">
+                        Connecté à l'API GitHub · {repos.length} repos chargés
+                        {owner && ` · Owner : ${owner}`}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
